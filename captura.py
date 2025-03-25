@@ -1,12 +1,9 @@
 import os
-
 import cv2
-
 
 DATA_DIR = './data'
 if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
-
 
 #Numero de carpetas o clases para las imagenes de las señas
 number_of_classes = 20
