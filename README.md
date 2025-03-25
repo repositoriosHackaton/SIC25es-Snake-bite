@@ -9,10 +9,7 @@ y elimine las barreras lingüística de la sociedad.
 ## NOSOTROS SOMOS SNAKE-BITE
 
 
-
-
-
-
+------------------------------------------------------------------------------------------------------
 
 ### Necesita de las siguientes librerias:
 * opencv-python
@@ -20,3 +17,4 @@ y elimine las barreras lingüística de la sociedad.
 * numpy
 * mediapipe
 * TTS
+* pyttsx3
