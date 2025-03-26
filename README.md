@@ -18,10 +18,12 @@ llevarlas al aislamiento. Como estudiantes de TI comprometidos con
 la sociedad, buscamos contribuir mediante un proyecto de inteligencia 
 artificial que ayude a cerrar esta brecha y mejorar la inclusión.
 
-## Prótotipo
-![Prótotipo de interfaz](https://raw.githubusercontent.com/repositoriosHackaton/SIC25es-Snake-bite/main/prototipo.png)
+## Prótotipo Inicial
+![Prótotipo Inicial](https://raw.githubusercontent.com/repositoriosHackaton/SIC25es-Snake-bite/main/prototipo.png)
 
 
+## Prótotipo Final
+![Prótotipo Final ](https://raw.githubusercontent.com/repositoriosHackaton/SIC25es-Snake-bite/main/fin.png)
 
 
 ## El proyecto necesita de las siguientes librerias:
