@@ -3,9 +3,10 @@
 #### "DANDO VOZ A LAS MANOS"
 
 Proyecto con el propósito de inclusión de personas con discapacidades
-para comunicarse con su voz.Este proyecto desarrolla un modelo capaz 
-de entender el lenguaje de señas y convertirlo automáticamente en 
-lenguaje vocal en tiempo real.
+para comunicarse con su voz.
+📌Este proyecto desarrolla un modelo capaz 
+  de entender el lenguaje de señas y convertirlo automáticamente en 
+  lenguaje vocal en tiempo real.
 La meta es clara, crear una herramienta accesible e intuitiva que 
 promueva la inclusión y elimine las barreras lingüísticas en la 
 sociedad.
@@ -34,3 +35,4 @@ artificial que ayude a cerrar esta brecha y mejorar la inclusión.
 * tkinter
 * pyttsx3
 * Pillow
+
