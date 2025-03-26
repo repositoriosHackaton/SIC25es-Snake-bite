@@ -4,6 +4,7 @@
 
 Proyecto con el propósito de inclusión de personas con discapacidades
 para comunicarse con su voz.
+
 📌Este proyecto desarrolla un modelo capaz 
   de entender el lenguaje de señas y convertirlo automáticamente en 
   lenguaje vocal en tiempo real.
