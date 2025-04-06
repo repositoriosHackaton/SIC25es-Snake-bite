@@ -1,22 +1,36 @@
-import pickle
+import os
 import cv2
-import mediapipe as mp
-import numpy as np
 import time
-import tkinter as tk
+import vosk
+import json
+import pickle
 import pyttsx3
+import pyaudio
+import threading
+import numpy as np
+import tkinter as tk
+import mediapipe as mp
 
-from tkinter import Label, Button, StringVar
 from PIL import Image, ImageTk
+from tkinter import Label, Button, StringVar
+
+sentence = []
+debounce_time = 3
+camera_on = True
+listening = False
+thread = None
+first_prediction_done = False
+last_prediction_time = time.time()
 
 model_dict = pickle.load(open('./model.p', 'rb'))
 model = model_dict['model']
+model_vosk = vosk.Model("vosk-model-small-es-0.42")
+recognizer = vosk.KaldiRecognizer(model_vosk, 16000)
 cap = cv2.VideoCapture(0)
 
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
-
 hands = mp_hands.Hands(static_image_mode=False, min_detection_confidence=0.3)
 
 signal_dict = {
@@ -25,18 +39,17 @@ signal_dict = {
     16: 'ESTUDIANTE', 17: 'PELO', 18: 'MANO', 19: 'EL SALVADOR'
 }
 
-sentence = []
-last_prediction_time = time.time()  
-debounce_time = 3
-
-first_prediction_done = False
+signal_path = 'señas/'
+signals_images = {'hola':'hola.png', 'bien':'bien.png', 'mal':'mal.png',
+                  'padre':'padre.png','madre':'madre.png', 'estudiante':'estudiante.png','pelo':'pelo.png',
+                  'mano':'mano.png', 'el salvador':'el_salvador.png'
+}
 
 root = tk.Tk()
-root.title("Reconocimiento de Señal en Lengua de Señas")
+root.title("Trducción LESSA")
 
 sentence_var = StringVar()
 sentence_var.set('Frase: ')
-
 
 label_sentence = Label(root, textvariable=sentence_var, font=("Helvetica", 16), width=50, height=2)
 label_sentence.pack()
@@ -45,7 +58,6 @@ def reset_sentence():
     global sentence
     sentence = []
     sentence_var.set('Frase: ')
-    print("Frase reseteada")
 
 button_reset = Button(root, text="Resetear Frase", font=("Helvetica", 14), command=reset_sentence)
 button_reset.pack()
@@ -54,7 +66,6 @@ engine = pyttsx3.init()
 engine.setProperty('rate', 150)  # 150 palabras por minuto en este caso
 
 def update_frame(frame):
-   
     img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     img_pil = Image.fromarray(img_rgb)
     img_tk = ImageTk.PhotoImage(image=img_pil)
@@ -67,18 +78,18 @@ def update_frame(frame):
 label_video = Label(root)
 label_video.pack()
 
-# Función para detectar y mostrar la predicción de la seña
 def show_frame():
     global sentence, last_prediction_time, first_prediction_done
-    ret, frame = cap.read()
 
+    if not camera_on: return
+
+    ret, frame = cap.read()
     if not ret:
         print("No se pudo obtener el frame de la cámara")
         return
 
     H, W, _ = frame.shape
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
     results = hands.process(frame_rgb)
 
     if results.multi_hand_landmarks:
@@ -128,6 +139,90 @@ def show_frame():
                 sentence_var.set('Frase: ' + ' '.join(sentence))
 
     update_frame(frame)
+
+def stop_camera():
+    global camera_on
+    camera_on = False
+    cap.release()
+    cv2.destroyAllWindows()
+    label_video.config(image="")
+
+def start_camera():
+    global camera_on, cap, listening
+    camera_on = True
+    stop_recognition()
+    cap = cv2.VideoCapture(0)
+    show_frame()
+
+def show_signal(sentence):
+        for word in sentence:
+            print(word)
+            image_name = signals_images.get(word.lower())
+            image_path = os.path.join(signal_path, image_name)
+            if image_path:
+                img = Image.open(image_path)
+                img = img.resize((300, 300))
+                img_tk = ImageTk.PhotoImage(img)
+                label_video.config(image=img_tk)
+                label_video.image = img_tk
+                root.update()
+                time.sleep(0.5)
+
+def recognize_speech():
+    global listening
+    listening = True
+    p = pyaudio.PyAudio()
+    stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=4000)
+    stream.start_stream()
+    audio_data = b""
+    sentence_var.set("Escuchando...")
+    sentence.clear()
+
+    while listening:
+        try:
+            for _ in range(20):  # Captura ~3 segundos
+                data = stream.read(4000, exception_on_overflow=False)
+                audio_data += data
+            if recognizer.AcceptWaveform(audio_data):
+                result = json.loads(recognizer.Result())
+                transcribed_text = result.get("text", "").strip()
+
+                if transcribed_text:
+                    sentence.append(transcribed_text)
+                    sentence_var.set("Frase: " + " ".join(sentence))
+                    show_signal(sentence)
+                    sentence.clear()
+                audio_data = b""
+        except Exception as e:
+            sentence_var.set("No fue posible capturar el audio.")
+            print('Error de reconocimiento de voz',e)
+            sentence.clear()
+            continue
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+
+def start_recognition():
+    global thread
+    if camera_on: stop_camera()
+    if not listening:
+        thread = threading.Thread(target=recognize_speech, daemon=True)
+        thread.start()
+
+def stop_recognition():
+    global listening, thread
+
+    if listening:
+        listening = False
+        if thread:
+            thread.join()  # Esperar a que el hilo termine
+            thread = None
+
+btn_voice_signal = Button(root, text="Traducir Voz", font=("Helvetica", 14), command=start_recognition)
+btn_voice_signal.pack()
+
+btn_voice_signal = Button(root, text="Traducir Seña", font=("Helvetica", 14), command=start_camera)
+btn_voice_signal.pack()
 
 root.after(10, show_frame)
 root.mainloop()
